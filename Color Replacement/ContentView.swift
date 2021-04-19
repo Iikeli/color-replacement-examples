@@ -9,8 +9,20 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        TabView {
+            ForegroundColor()
+                .tabItem {
+                    Label("Foreground color", systemImage: "sun.haze")
+                }
+            CustomImageTintColor()
+                .tabItem {
+                    Label("Image Tint", systemImage: "cloud")
+                }
+            ColorReplacement()
+                .tabItem {
+                    Label("Color Replacement", systemImage: "paintbrush")
+                }
+        }
     }
 }
 
