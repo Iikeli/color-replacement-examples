@@ -10,7 +10,7 @@ import SwiftUI
 /**
  Extends UIImage giving the ability to change a color in an image with another.
  - Author: Iiro Alhonen
- - Version: 2021-04-09
+ - Version: 2021-06-08
  */
 extension UIImage {
     /**
@@ -35,9 +35,7 @@ extension UIImage {
         let width = imageRef.width
         let height = imageRef.height
         
-        let bytesPerPixel = 4
-        let bytesPerRow = bytesPerPixel * width
-        let bitmapByteCount = bytesPerRow * height
+        let bitmapByteCount = imageRef.bytesPerRow * height
         
         let rawData = UnsafeMutablePointer<UInt8>.allocate(capacity: bitmapByteCount)
         defer {
@@ -52,8 +50,8 @@ extension UIImage {
             data: rawData,
             width: width,
             height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
+            bitsPerComponent: imageRef.bitsPerComponent,
+            bytesPerRow: imageRef.bytesPerRow,
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
                 | CGBitmapInfo.byteOrder32Big.rawValue
@@ -64,9 +62,11 @@ extension UIImage {
         let rc = CGRect(x: 0, y: 0, width: width, height: height)
         // Draw source image on created context.
         context.draw(imageRef, in: rc)
-        var byteIndex = 0
+        let pixelCount = width * height
+        let bytesPerPixel = imageRef.bitsPerPixel / 8
         // Iterate through pixels.
-        while byteIndex < bitmapByteCount {
+        DispatchQueue.concurrentPerform(iterations: pixelCount, execute: { pixel in
+            let byteIndex = pixel * bytesPerPixel
             // Get color of current pixel.
             let red = CGFloat(rawData[byteIndex + 0]) / 255
             let green = CGFloat(rawData[byteIndex + 1]) / 255
@@ -80,8 +80,7 @@ extension UIImage {
                 rawData[byteIndex + 2] = newBlue
                 rawData[byteIndex + 3] = newAlpha
             }
-            byteIndex += 4
-        }
+        })
         
         // Retrieve image from memory context.
         guard let image = context.makeImage() else {
